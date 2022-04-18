@@ -3,6 +3,7 @@ package main
 import (
 	"container/ring"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"time"
@@ -74,6 +75,8 @@ func (p *PipeLineInt) AddDataInPipe(source <-chan int) <-chan int {
 			return stage(p.done, sourceChan)
 		}(p.stages[i], dataFromSource)
 	}
+	log.Println("added data to pipeline")
+
 	return dataFromSource
 }
 
@@ -90,8 +93,12 @@ func main() {
 				case data := <-c:
 					if data > 0 {
 						convertedIntChan <- data
+						log.Println("negative filter checked", data)
+						continue
 					}
+					log.Println("negative filter not passed", data)
 				case <-done:
+					log.Println("negative numbers stage done")
 					return
 				}
 			}
@@ -108,11 +115,15 @@ func main() {
 					if data != 0 && data%3 == 0 {
 						select {
 						case filteredIntChan <- data:
+							log.Println("multiple of 3 checked", data)
 						case <-done:
 							return
 						}
+						continue
 					}
+					log.Println("filter multiple of 3 not passed", data)
 				case <-done:
+
 					return
 				}
 			}
@@ -143,7 +154,7 @@ func main() {
 				case <-time.After(bufferDrainInterval):
 					for i := 0; i < buffer.Len(); i++ {
 
-						fmt.Println(buffer.Value)
+						fmt.Println(i, buffer.Value)
 						buffer = buffer.Next()
 					}
 				case <-done:
